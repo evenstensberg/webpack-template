@@ -1,0 +1,7 @@
+**/__mocks__/**
+**/__tests__/**
+.eslintrc
+src
+tsconfig.json
+tsconfig.tsbuildinfo
+

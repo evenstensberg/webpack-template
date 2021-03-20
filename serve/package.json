@@ -1,0 +1,24 @@
+{
+  "name": "@webpack-cli/serve",
+  "version": "1.0.1-rc.0",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "keywords": [],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "webpack-dev-server": "3.10.3"
+  },
+  "peerDependencies": {
+    "webpack-cli": "4.x.x"
+  },
+  "peerDependenciesMeta": {
+    "webpack-dev-server": {
+      "optional": true
+    }
+  },
+  "gitHead": "fb50f766851f500ca12867a2aa9de81fa6e368f9"
+}
