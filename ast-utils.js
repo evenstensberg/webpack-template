@@ -1,13 +1,12 @@
-import { JSCodeshift, Node, valueType } from './types/NodePath';
-import { isIdentifierStart, isIdentifierChar, isKeyword } from './validate-identifier';
+const { isIdentifierStart, isIdentifierChar, isKeyword } = require('./validate-identifier');
 
-function isImportPresent(j: JSCodeshift, ast: Node, path: string): boolean {
+function isImportPresent(j, ast, path) {
     if (typeof path !== 'string') {
         throw new Error(`path parameter should be string, received ${typeof path}`);
     }
     let importExists = false;
-    ast.find(j.CallExpression).forEach((callExp: Node): void => {
-        if ((callExp.value as Node).callee.name === 'require' && (callExp.value as Node).arguments[0].value === path) {
+    ast.find(j.CallExpression).forEach((callExp) => {
+        if ((callExp.value).callee.name === 'require' && (callExp.value).arguments[0].value === path) {
             importExists = true;
         }
     });
@@ -22,10 +21,10 @@ function isImportPresent(j: JSCodeshift, ast: Node, path: string): boolean {
  * @returns {Node} Value at given traversal path
  */
 
-function safeTraverse(obj: Node, paths: string[]): Node | Node[] {
+function safeTraverse(obj, paths) {
     // TODO: to revisit the type of this function, it's not clear what should return.
     // Sometimes its return type is used as string
-    let val: Node = obj;
+    let val = obj;
     let idx = 0;
 
     while (idx < paths.length) {
@@ -45,8 +44,8 @@ function safeTraverse(obj: Node, paths: string[]): Node | Node[] {
  * @returns {String|Boolean} type at given path.
  */
 
-function safeTraverseAndGetType(path: Node): string | boolean {
-    const pathValue = safeTraverse(path, ['value', 'value']) as Node;
+function safeTraverseAndGetType(path) {
+    const pathValue = safeTraverse(path, ['value', 'value']);
     return pathValue ? pathValue.type : false;
 }
 
@@ -56,7 +55,7 @@ function safeTraverseAndGetType(path: Node): string | boolean {
  * @returns {String} member expression string.
  */
 
-function memberExpressionToPathString(path: Node): string {
+function memberExpressionToPathString(path) {
     if (path && path.object) {
         return [memberExpressionToPathString(path.object), path.property.name].join('.');
     }
@@ -64,14 +63,14 @@ function memberExpressionToPathString(path: Node): string {
 }
 
 // Convert Array<string> like ['webpack', 'optimize', 'DedupePlugin'] to nested MemberExpressions
-function pathsToMemberExpression(j: JSCodeshift, paths: string[]): Node {
+function pathsToMemberExpression(j, paths) {
     if (!paths.length) {
         return null;
     } else if (paths.length === 1) {
         return j.identifier(paths[0]);
     } else {
-        const first: string[] = paths.slice(0, 1);
-        const rest: string[] = paths.slice(1);
+        const first = paths.slice(0, 1);
+        const rest = paths.slice(1);
         return j.memberExpression(pathsToMemberExpression(j, rest), pathsToMemberExpression(j, first));
     }
 }
@@ -87,10 +86,10 @@ function pathsToMemberExpression(j: JSCodeshift, paths: string[]): Node {
  * @returns {Node} Node that has the pluginName
  */
 
-function findPluginsByName(j: JSCodeshift, node: Node, pluginNamesArray: string[]): Node {
-    return node.find(j.NewExpression).filter((path: Node): boolean => {
+function findPluginsByName(j, node, pluginNamesArray) {
+    return node.find(j.NewExpression).filter((path) => {
         return pluginNamesArray.some(
-            (plugin: string): boolean => memberExpressionToPathString(path.get('callee').value as Node) === plugin,
+            (plugin) => memberExpressionToPathString(path.get('callee').value) === plugin,
         );
     });
 }
@@ -102,9 +101,9 @@ function findPluginsByName(j: JSCodeshift, node: Node, pluginNamesArray: string[
  * @returns {Node} rootNode modified AST.
  */
 
-function findPluginsArrayAndRemoveIfEmpty(j: JSCodeshift, rootNode: Node): Node {
-    return rootNode.find(j.Identifier, { name: 'plugins' }).forEach((node: Node): void => {
-        const elements = safeTraverse(node, ['parent', 'value', 'value', 'elements']) as Node[];
+function findPluginsArrayAndRemoveIfEmpty(j, rootNode) {
+    return rootNode.find(j.Identifier, { name: 'plugins' }).forEach((node) => {
+        const elements = safeTraverse(node, ['parent', 'value', 'value', 'elements']);
         if (!elements.length) {
             j(node.parent).remove();
         }
@@ -121,7 +120,7 @@ function findPluginsArrayAndRemoveIfEmpty(j: JSCodeshift, rootNode: Node): Node 
  * @returns {Node} found node and
  */
 
-function findRootNodesByName(j: JSCodeshift, node: Node, propName: string): Node {
+function findRootNodesByName(j, node, propName) {
     return node.find(j.Property, { key: { name: propName } });
 }
 
@@ -134,7 +133,7 @@ function findRootNodesByName(j: JSCodeshift, node: Node, propName: string): Node
  * @returns {Node}
  */
 
-function createIdentifierOrLiteral(j: JSCodeshift, val: valueType): Node {
+function createIdentifierOrLiteral(j, val) {
     // IPath<IIdentifier> | IPath<ILiteral> doesn't work, find another way
     let literalVal = val;
     // We'll need String to native type conversions
@@ -156,7 +155,7 @@ function createIdentifierOrLiteral(j: JSCodeshift, val: valueType): Node {
                 return j.literal(literalVal);
             }
             if (typeof val === 'object' && val.__paths) {
-                const regExpVal = ((val.__paths[0].value as JSCodeshift).program as Node).body[0].expression;
+                const regExpVal = ((val.__paths[0].value).program).body[0].expression;
                 return j.literal(regExpVal.value);
             } else if (typeof literalVal === 'string') {
                 // Use identifier instead
@@ -178,8 +177,8 @@ function createIdentifierOrLiteral(j: JSCodeshift, val: valueType): Node {
  * @returns {Node}
  */
 
-function createLiteral(j: JSCodeshift, val: valueType): Node {
-    let literalVal: valueType = val;
+function createLiteral(j, val) {
+    let literalVal = val;
     // We'll need String to native type conversions
     if (typeof val === 'string') {
         // 'true' => true
@@ -208,7 +207,7 @@ function createLiteral(j: JSCodeshift, val: valueType): Node {
  * @returns {Node}
  */
 
-function createProperty(j: JSCodeshift, key: string | number, value: valueType): Node {
+function createProperty(j, key, value) {
     return j.property('init', createIdentifierOrLiteral(j, key), createLiteral(j, value));
 }
 
@@ -225,16 +224,16 @@ function createProperty(j: JSCodeshift, key: string | number, value: valueType):
  * @returns {Void}
  */
 
-function addOrUpdateConfigObject(j: JSCodeshift, rootNode: Node, configProperty: string, key: string, value: valueType): void {
-    const propertyExists = rootNode.properties.filter((node: Node): boolean => node.key.name === configProperty).length;
+function addOrUpdateConfigObject(j, rootNode, configProperty, key, value) {
+    const propertyExists = rootNode.properties.filter((node) => node.key.name === configProperty).length;
 
     if (propertyExists) {
         rootNode.properties
-            .filter((path: Node): boolean => path.key.name === configProperty)
-            .forEach((path: Node): void => {
-                const newProperties = (path.value as Node).properties.filter((p: Node): boolean => p.key.name !== key);
+            .filter((path) => path.key.name === configProperty)
+            .forEach((path) => {
+                const newProperties = (path.value).properties.filter((p) => p.key.name !== key);
                 newProperties.push(j.objectProperty(j.identifier(key), value));
-                (path.value as Node).properties = newProperties;
+                (path.value).properties = newProperties;
             });
     } else {
         rootNode.properties.push(
@@ -254,14 +253,14 @@ function addOrUpdateConfigObject(j: JSCodeshift, rootNode: Node, configProperty:
  * @returns {Node | Void} - path to the root webpack configuration object if plugin is found
  */
 
-function findAndRemovePluginByName(j: JSCodeshift, node: Node, pluginName: string): Node {
-    let rootPath: Node;
+function findAndRemovePluginByName(j, node, pluginName) {
+    let rootPath;
 
     findPluginsByName(j, node, [pluginName])
-        .filter((path: Node): boolean => !!safeTraverse(path, ['parent', 'value']))
-        .forEach((path: Node): void => {
-            rootPath = safeTraverse(path, ['parent', 'parent', 'parent', 'value']) as Node;
-            const arrayPath = path.parent.value as Node;
+        .filter((path) => !!safeTraverse(path, ['parent', 'value']))
+        .forEach((path) => {
+            rootPath = safeTraverse(path, ['parent', 'parent', 'parent', 'value']);
+            const arrayPath = path.parent.value;
             if (arrayPath.elements && arrayPath.elements.length === 1) {
                 j(path.parent.parent).remove();
             } else {
@@ -285,12 +284,12 @@ function findAndRemovePluginByName(j: JSCodeshift, node: Node, pluginName: strin
  * @returns {Void}
  */
 
-function createOrUpdatePluginByName(j: JSCodeshift, rootNodePath: Node, pluginName: string, options?: object): void {
-    const pluginInstancePath: Node = findPluginsByName(j, j(rootNodePath), [pluginName]);
-    let optionsProps: Node[];
+function createOrUpdatePluginByName(j, rootNodePath, pluginName, options) {
+    const pluginInstancePath = findPluginsByName(j, j(rootNodePath), [pluginName]);
+    let optionsProps = [];
     if (options) {
         optionsProps = Object.keys(options).map(
-            (key: string): Node => {
+            (key) => {
                 return createProperty(j, key, options[key]);
             },
         );
@@ -298,29 +297,29 @@ function createOrUpdatePluginByName(j: JSCodeshift, rootNodePath: Node, pluginNa
 
     // If plugin declaration already exist
     if (pluginInstancePath.size()) {
-        pluginInstancePath.forEach((path: Node): void => {
+        pluginInstancePath.forEach((path) => {
             // There are options we want to pass as argument
             if (optionsProps) {
-                const args: Node[] = (path.value as Node).arguments;
+                const args = (path.value).arguments;
                 if (args.length) {
                     // Plugin is called with object as arguments
                     // we will merge those objects
-                    const currentProps: Node = j(path).find(j.ObjectExpression).get('properties');
+                    const currentProps = j(path).find(j.ObjectExpression).get('properties');
 
-                    optionsProps.forEach((opt: Node): void => {
+                    optionsProps.forEach((opt) => {
                         // Search for same keys in the existing object
                         const existingProps = j(currentProps)
                             .find(j.Identifier)
-                            .filter((p: Node): boolean => opt.key.value === (p.value as Node).name);
+                            .filter((p) => opt.key.value === (p.value).name);
 
                         if (existingProps.size()) {
                             // Replacing values for the same key
-                            existingProps.forEach((p: Node): void => {
+                            existingProps.forEach((p) => {
                                 j(p.parent).replaceWith(opt);
                             });
                         } else {
                             // Adding new key:values
-                            (currentProps.value as Node[]).push(opt);
+                            (currentProps.value).push(opt);
                         }
                     });
                 } else {
@@ -330,12 +329,12 @@ function createOrUpdatePluginByName(j: JSCodeshift, rootNodePath: Node, pluginNa
             }
         });
     } else {
-        let argumentsArray: Node[] = [];
+        let argumentsArray = [];
         if (optionsProps) {
             argumentsArray = [j.objectExpression(optionsProps)];
         }
         const loaderPluginInstance = j.newExpression(pathsToMemberExpression(j, pluginName.split('.').reverse()), argumentsArray);
-        (rootNodePath.value as Node).elements.push(loaderPluginInstance);
+        (rootNodePath.value).elements.push(loaderPluginInstance);
     }
 }
 
@@ -350,8 +349,8 @@ function createOrUpdatePluginByName(j: JSCodeshift, rootNodePath: Node, pluginNa
  * @returns {String} variable name - ex. 'const s = require(s) gives "s"`
  */
 
-function findVariableToPlugin(j: JSCodeshift, rootNode: Node, pluginPackageName: string): string {
-    const moduleVarNames: Node[] = rootNode
+function findVariableToPlugin(j, rootNode, pluginPackageName) {
+    const moduleVarNames[] = rootNode
         .find(j.VariableDeclarator)
         .filter(j.filters.VariableDeclarator.requiresModule(pluginPackageName))
         .nodes();
@@ -369,13 +368,13 @@ function findVariableToPlugin(j: JSCodeshift, rootNode: Node, pluginPackageName:
  * @returns {Boolean}
  */
 
-function isType(path: Node, type: string): boolean {
+function isType(path, type) {
     return path.type === type;
 }
 
-function findObjWithOneOfKeys(p: Node, keyNames: string[]): boolean {
-    return (p.value as Node).properties.reduce((predicate: boolean, prop: Node): boolean => {
-        const name: string = prop.key.name;
+function findObjWithOneOfKeys(p, keyNames) {
+    return (p.value).properties.reduce((predicate, prop) => {
+        const name = prop.key.name;
         return keyNames.includes(name) || predicate;
     }, false);
 }
@@ -389,7 +388,7 @@ function findObjWithOneOfKeys(p: Node, keyNames: string[]): boolean {
  * @returns {Node} - the created ast
  */
 
-function getRequire(j: JSCodeshift, constName: string, packagePath: string): Node {
+function getRequire(j, constName, packagePath) {
     return j.variableDeclaration('const', [
         j.variableDeclarator(j.identifier(constName), j.callExpression(j.identifier('require'), [j.literal(packagePath)])),
     ]);
@@ -406,34 +405,34 @@ function getRequire(j: JSCodeshift, constName: string, packagePath: string): Nod
  * @returns {Node} - the created ast
  */
 
-function addProperty(j: JSCodeshift, p: Node, key: string, value: valueType, action?: string): Node {
+function addProperty(j, p, key, value, action) {
     if (!p) {
         return;
     }
-    let valForNode: valueType;
+    let valForNode;
     if (Array.isArray(value)) {
-        let arrExp: Node = j.arrayExpression([]);
+        let arrExp = j.arrayExpression([]);
         if (safeTraverseAndGetType(p) === 'ArrayExpression') {
-            arrExp = (p.value as Node).value as Node;
+            arrExp = (p.value).value;
         }
-        value.forEach((val: valueType): void => {
+        value.forEach((val) => {
             addProperty(j, arrExp, null, val);
         });
         valForNode = arrExp;
     } else if (typeof value === 'object' && !(value.__paths || value instanceof RegExp)) {
-        let objectExp: Node = j.objectExpression([]);
+        let objectExp = j.objectExpression([]);
         if (safeTraverseAndGetType(p) === 'ObjectExpression') {
-            objectExp = (p.value as Node).value as Node;
+            objectExp = (p.value).value;
         }
         // object -> loop through it
-        Object.keys(value).forEach((prop: string): void => {
+        Object.keys(value).forEach((prop) => {
             addProperty(j, objectExp, prop, value[prop]);
         });
         valForNode = objectExp;
     } else {
         valForNode = createIdentifierOrLiteral(j, value);
     }
-    let pushVal: valueType;
+    let pushVal;
     if (key) {
         pushVal = j.property('init', j.identifier(key), valForNode);
     } else {
@@ -449,8 +448,8 @@ function addProperty(j: JSCodeshift, p: Node, key: string, value: valueType, act
         p.properties.push(pushVal);
         return p;
     }
-    if (p.value && (p.value as Node).properties) {
-        (p.value as Node).properties.push(pushVal);
+    if (p.value && (p.value).properties) {
+        (p.value).properties.push(pushVal);
         return p;
     }
     if (p.elements) {
@@ -470,7 +469,7 @@ function addProperty(j: JSCodeshift, p: Node, key: string, value: valueType, act
  * @returns {Node} - the created ast
  */
 
-function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType): Node {
+function removeProperty(j, ast, key, value) {
     if (typeof value === 'object' && !Array.isArray(value)) {
         // override for module.rules / loaders
         if (key === 'module' && value.rules) {
@@ -481,7 +480,7 @@ function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType
                         value: value.rules[0].loader,
                     },
                 })
-                .forEach((p: Node): void => {
+                .forEach((p) => {
                     j(p.parent).remove();
                 });
         }
@@ -493,7 +492,7 @@ function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType
             .find(j.Literal, {
                 value: value[0],
             })
-            .forEach((p: Node): void => {
+            .forEach((p) => {
                 const configKey = safeTraverse(p, ['parent', 'parent', 'node', 'key', 'name']);
                 if (configKey === key) {
                     j(p).remove();
@@ -502,7 +501,7 @@ function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType
     }
 
     // value => literal string / boolean / nested object
-    let objKeyToRemove: string | null = null;
+    let objKeyToRemove = null;
     if (value === null) {
         objKeyToRemove = key;
     } else if (typeof value === 'object') {
@@ -519,7 +518,7 @@ function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType
                 type: 'Identifier',
             },
         })
-        .forEach((p: Node): void => {
+        .forEach((p) => {
             j(p).remove();
         });
 }
@@ -537,17 +536,17 @@ function removeProperty(j: JSCodeshift, ast: Node, key: string, value: valueType
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function parseTopScope(j: JSCodeshift, ast: Node, value: string[], action: string): boolean | Node {
-    function createTopScopeProperty(p: Node): boolean {
-        value.forEach((n: string): void => {
-            if (!(p.value as Node).body[0].declarations || n.indexOf((p.value as Node).body[0].declarations[0].id.name) <= 0) {
-                (p.value as Node).body.splice(-1, 0, n);
+function parseTopScope(j, ast, value, action) {
+    function createTopScopeProperty(p): boolean {
+        value.forEach((n) => {
+            if (!(p.value).body[0].declarations || n.indexOf((p.value).body[0].declarations[0].id.name) <= 0) {
+                (p.value).body.splice(-1, 0, n);
             }
         });
         return false; // TODO: debug later
     }
     if (value) {
-        return ast.find(j.Program).filter((p: Node): boolean => createTopScopeProperty(p));
+        return ast.find(j.Program).filter((p): boolean => createTopScopeProperty(p));
     } else {
         return ast;
     }
@@ -566,18 +565,18 @@ function parseTopScope(j: JSCodeshift, ast: Node, value: string[], action: strin
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function parseMerge(j: JSCodeshift, ast: Node, value: string[], action: string): boolean | Node {
-    function createMergeProperty(p: Node, configIdentifier: string): boolean {
+function parseMerge(j, ast, value, action) {
+    function createMergeProperty(p, configIdentifier) {
         // FIXME Use j.callExp()
-        const exportsDecl: Node[] = (p.value as Node).body.map(
-            (n: Node): Node => {
+        const exportsDecl[] = (p.value).body.map(
+            (n) => {
                 if (n.expression) {
                     return n.expression.right;
                 }
             },
         );
         const bodyLength = exportsDecl.length;
-        const newVal: Node = {};
+        const newVal = {};
         newVal.type = 'ExpressionStatement';
         newVal.expression = {
             left: {
@@ -591,21 +590,21 @@ function parseMerge(j: JSCodeshift, ast: Node, value: string[], action: string):
             type: 'AssignmentExpression',
         };
 
-        (p.value as Node).body[bodyLength - 1] = newVal;
+        (p.value).body[bodyLength - 1] = newVal;
         return false; // TODO: debug later
     }
 
-    function addMergeImports(configIdentifier: string, configPath: string): void {
+    function addMergeImports(configIdentifier, configPath) {
         if (typeof configIdentifier !== 'string' || typeof configPath !== 'string') {
             throw new Error(`Both parameters should be strings. received ${typeof configIdentifier}, ${typeof configPath}`);
         }
-        ast.find(j.Program).forEach((p: Node): void => {
+        ast.find(j.Program).forEach((p) => {
             if (!isImportPresent(j, ast, 'webpack-merge')) {
-                (p.value as Node).body.splice(-1, 0, "const merge = require('webpack-merge')");
+                (p.value).body.splice(-1, 0, "const merge = require('webpack-merge')");
             }
 
             if (!isImportPresent(j, ast, configPath)) {
-                (p.value as Node).body.splice(-1, 0, `const ${configIdentifier} = require('${configPath}')`);
+                (p.value).body.splice(-1, 0, `const ${configIdentifier} = require('${configPath}')`);
             }
         });
     }
@@ -613,7 +612,7 @@ function parseMerge(j: JSCodeshift, ast: Node, value: string[], action: string):
     if (value) {
         const [configIdentifier, configPath] = value;
         addMergeImports(configIdentifier, configPath);
-        return ast.find(j.Program).filter((p: Node): boolean => createMergeProperty(p, configIdentifier));
+        return ast.find(j.Program).filter((p) => createMergeProperty(p, configIdentifier));
     } else {
         return ast;
     }

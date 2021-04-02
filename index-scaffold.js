@@ -1,24 +1,19 @@
-import jscodeshift from 'jscodeshift';
-import Generator from 'yeoman-generator';
+const jscodeshift = require('jscodeshift');
+const Generator = require('yeoman-generator');
 
-type CustomGeneratorStringPrompt = { [x: string]: string } | Promise<{ [x: string]: string }>;
-type CustomGeneratorBoolPrompt = { [x: string]: boolean } | Promise<{ [x: string]: boolean }>;
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-export function createArrowFunction(value: string): string {
+export function createArrowFunction(value) {
     return `() => '${value}'`;
 }
 
-export function createRegularFunction(value: string): string {
+export function createRegularFunction(value) {
     return `function () {\n return '${value}'\n}`;
 }
 
-export function createDynamicPromise(arrOrString: string[] | string): string {
+export function createDynamicPromise(arrOrString) {
     if (Array.isArray(arrOrString)) {
         return (
             '() => new Promise((resolve) => resolve([' +
-            arrOrString.map((func: string): string => {
+            arrOrString.map((func) => {
                 return "'" + func + "'";
             }) +
             ']))'
@@ -28,11 +23,11 @@ export function createDynamicPromise(arrOrString: string[] | string): string {
     }
 }
 
-export function createAssetFilterFunction(value: string): string {
+export function createAssetFilterFunction(value) {
     return `function (assetFilename) {\n return assetFilename.endsWith('.${value}');\n}`;
 }
 
-export function createExternalFunction(regexp: string): string {
+export function createExternalFunction(regexp) {
     return (
         '\n function (context, request, callback) {\n if (' +
         '/' +
@@ -44,22 +39,22 @@ export function createExternalFunction(regexp: string): string {
     );
 }
 
-export function parseValue(regexp: string): string {
+export function parseValue(regexp) {
     return jscodeshift(regexp);
 }
 
-export function createRequire(val: string): string {
+export function createRequire(val) {
     return `const ${val} = require('${val}');`;
 }
 
 export function List(
-    self: Generator,
-    name: string,
-    message: string,
-    choices: string[],
-    defaultChoice?: string,
+    self,
+    name,
+    message,
+    choices,
+    defaultChoice,
     skip = false,
-): CustomGeneratorStringPrompt {
+) {
     if (skip) return { [name]: defaultChoice };
 
     return self.prompt([
@@ -73,7 +68,7 @@ export function List(
     ]);
 }
 
-export function RawList(name: string, message: string, choices: string[]): Generator.Question {
+export function RawList(name, message, choices) {
     return {
         choices,
         message,
@@ -82,7 +77,7 @@ export function RawList(name: string, message: string, choices: string[]): Gener
     };
 }
 
-export function CheckList(name: string, message: string, choices: string[]): Generator.Question {
+export function CheckList(name, message, choices) {
     return {
         choices,
         message,
@@ -91,7 +86,7 @@ export function CheckList(name: string, message: string, choices: string[]): Gen
     };
 }
 
-export function Input(self: Generator, name: string, message: string, defaultChoice?: string, skip = false): CustomGeneratorStringPrompt {
+export function Input(self, name, message, defaultChoice?, skip = false) {
     if (skip) return { [name]: defaultChoice };
     return self.prompt([
         {
@@ -104,15 +99,15 @@ export function Input(self: Generator, name: string, message: string, defaultCho
 }
 
 export function InputValidate(
-    self: Generator,
-    name: string,
-    message: string,
-    cb?: (input: string) => string | boolean,
-    defaultChoice?: string,
+    self,
+    name,
+    message,
+    cb,
+    defaultChoice,
     skip = false,
-): object | any {
+) {
     if (skip) return { [name]: defaultChoice };
-    const input: Generator.Question = {
+    const input = {
         message,
         name,
         type: 'input',
@@ -122,7 +117,7 @@ export function InputValidate(
     return self.prompt([input]);
 }
 
-export function Confirm(self: Generator, name: string, message: string, defaultChoice = true, skip = false): CustomGeneratorBoolPrompt {
+export function Confirm(self, name, message, defaultChoice = true, skip = false) {
     if (skip) return { [name]: defaultChoice };
 
     return self.prompt([
@@ -135,9 +130,7 @@ export function Confirm(self: Generator, name: string, message: string, defaultC
     ]);
 }
 
-// TODO: to understand this type
-// eslint-disable-next-line
-export function AutoComplete(name: string, message: string, options: object = {}): any {
+export function AutoComplete(name, message, options) {
     return Object.assign(
         {
             message,

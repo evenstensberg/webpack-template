@@ -3,7 +3,7 @@
 // predicate containing a big ugly `switch` statement is faster than
 // a regular expression, and on Chrome the two are about on par.
 // https://tc39.github.io/ecma262/#sec-keywords
-function isKeyword(code: string): boolean {
+function isKeyword(code) {
     switch (code.length) {
         case 2:
             return code === 'if' || code === 'in' || code === 'do';
@@ -534,7 +534,7 @@ const astralIdentifierCodes = [
 // This has a complexity linear to the value of the code. The
 // assumption is that looking up astral identifier characters is
 // rare.
-function isInAstralSet(code: number, set: number[]): boolean {
+function isInAstralSet(code, set) {
     let pos = 0x10000;
     for (let i = 0; i < set.length; i += 2) {
         pos += set[i];
@@ -551,8 +551,8 @@ function isInAstralSet(code: number, set: number[]): boolean {
 
 // Test whether a given character code starts an identifier.
 
-function isIdentifierStart(code: string): boolean {
-    const c: number = code.charCodeAt(0);
+function isIdentifierStart(code) {
+    const c = code.charCodeAt(0);
     if (c < 65) {
         return c === 36;
     }
@@ -571,7 +571,7 @@ function isIdentifierStart(code: string): boolean {
     return isInAstralSet(c, astralIdentifierStartCodes);
 }
 
-function validationChar(charCode: number): boolean {
+function validationChar(charCode) {
     if (charCode < 48) {
         return charCode === 36;
     }
@@ -598,12 +598,12 @@ function validationChar(charCode: number): boolean {
 
 // Test whether a given character is part of an identifier.
 
-function isIdentifierChar(code: string): boolean {
-    let l: number = code.length;
+function isIdentifierChar(code) {
+    let l = code.length;
     while (l--) {
-        const ch: number = code.charCodeAt(code.length - l);
+        const ch = code.charCodeAt(code.length - l);
         return validationChar(ch) || ch === 0x24 /* $ */ || ch === 0x5f /* _ */ || ch === 0x200c /* <ZWNJ> */ || ch === 0x200d; /* <ZWJ> */
     }
 }
 
-export { isIdentifierChar, isIdentifierStart, isKeyword };
+module.exports = { isIdentifierChar, isIdentifierStart, isKeyword };
