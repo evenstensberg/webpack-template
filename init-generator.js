@@ -1,11 +1,11 @@
-import { blue, green, bold } from 'colorette';
-import logger from 'webpack-cli/lib/utils/logger';
-import logSymbols from 'log-symbols';
-import path from 'path';
-import { getPackageManager } from '@webpack-cli/package-utils';
-import { Confirm, Input, List } from '@webpack-cli/webpack-scaffold';
+const { blue, green, bold } = require('colorette');
+const logger = require('webpack-cli/lib/utils/logger');
+const logSymbols = require('log-symbols');
+const path = require('path');
+const { getPackageManager } = require('@webpack-cli/package-utils');
+const { Confirm, Input, List } = require('@webpack-cli/webpack-scaffold');
 
-import {
+const {
     getDefaultOptimization,
     LangType,
     langQuestionHandler,
@@ -14,8 +14,7 @@ import {
     StylingType,
     styleQuestionHandler,
     entryQuestions,
-} from './utils';
-import { CustomGenerator } from './types';
+} = require('./utils');
 
 /**
  *
@@ -26,12 +25,13 @@ import { CustomGenerator } from './types';
  * @returns {Void} After execution, transforms are triggered
  *
  */
-export default class InitGenerator extends CustomGenerator {
-    public usingDefaults: boolean;
-    public autoGenerateConfig: boolean;
-    private langType: string;
+export default class InitGenerator {
 
-    public constructor(args, opts) {
+    usingDefaults;
+    autoGenerateConfig;
+    langType;
+
+    constructor(args, opts) {
         super(args, opts);
 
         this.usingDefaults = true;
@@ -66,12 +66,12 @@ export default class InitGenerator extends CustomGenerator {
             tooltip.splitChunks(),
         );
 
-        (this.configuration.config.webpackOptions.plugins as string[]).push('new webpack.ProgressPlugin()');
+        (this.configuration.config.webpackOptions.plugins).push('new webpack.ProgressPlugin()');
     }
 
-    public async prompting(): Promise<void | {}> {
+    async prompting() {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const self: this = this;
+        const self = this;
 
         this.usingDefaults = true;
 
@@ -90,7 +90,7 @@ export default class InitGenerator extends CustomGenerator {
             this.autoGenerateConfig,
         );
 
-        const entryOption: string | object = await entryQuestions(self, multiEntries, this.autoGenerateConfig);
+        const entryOption = await entryQuestions(self, multiEntries, this.autoGenerateConfig);
 
         if (typeof entryOption === 'string') {
             // single entry
@@ -175,12 +175,12 @@ export default class InitGenerator extends CustomGenerator {
                     '\n',
                 );
                 if (cssBundleName.length !== 0) {
-                    (this.configuration.config.webpackOptions.plugins as string[]).push(
+                    (this.configuration.config.webpackOptions.plugins).push(
                         // TODO: use [contenthash] after it is supported
                         `new MiniCssExtractPlugin({ filename:'${cssBundleName}.[chunkhash].css' })`,
                     );
                 } else {
-                    (this.configuration.config.webpackOptions.plugins as string[]).push(
+                    (this.configuration.config.webpackOptions.plugins).push(
                         "new MiniCssExtractPlugin({ filename:'style.css' })",
                     );
                 }
@@ -201,12 +201,12 @@ export default class InitGenerator extends CustomGenerator {
             this.dependencies.push('html-webpack-plugin');
             const htmlWebpackDependency = 'html-webpack-plugin';
             const htmlwebpackPlugin = generatePluginName(htmlWebpackDependency);
-            (this.configuration.config.topScope as string[]).push(
+            (this.configuration.config.topScope).push(
                 `const ${htmlwebpackPlugin} = require('${htmlWebpackDependency}')`,
                 '\n',
                 tooltip.html(),
             );
-            (this.configuration.config.webpackOptions.plugins as string[]).push(`new ${htmlwebpackPlugin}({
+            (this.configuration.config.webpackOptions.plugins).push(`new ${htmlwebpackPlugin}({
 					template: 'index.html'
 				})`);
 
@@ -219,7 +219,7 @@ export default class InitGenerator extends CustomGenerator {
             // PWA + offline support
             this.configuration.config.topScope.push("const workboxPlugin = require('workbox-webpack-plugin');", '\n');
             this.dependencies.push('workbox-webpack-plugin');
-            (this.configuration.config.webpackOptions.plugins as string[]).push(`new workboxPlugin.GenerateSW({
+            (this.configuration.config.webpackOptions.plugins).push(`new workboxPlugin.GenerateSW({
 				swDest: 'sw.js',
 				clientsClaim: true,
 				skipWaiting: false,
@@ -235,17 +235,14 @@ export default class InitGenerator extends CustomGenerator {
         this.configuration.config.webpackOptions.mode = this.usingDefaults ? "'production'" : "'development'";
     }
 
-    public installPlugins(): void {
+    installPlugins() {
         const packager = getPackageManager();
-        const opts: {
-            dev?: boolean;
-            'save-dev'?: boolean;
-        } = packager === 'yarn' ? { dev: true } : { 'save-dev': true };
+        const opts = packager === 'yarn' ? { dev: true } : { 'save-dev': true };
 
         this.scheduleInstallTask(packager, this.dependencies, opts);
     }
 
-    public writing(): void {
+    writing() {
         this.configuration.usingDefaults = this.usingDefaults;
         this.config.set('configuration', this.configuration);
 
@@ -253,7 +250,7 @@ export default class InitGenerator extends CustomGenerator {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         this.fs.extendJSON(this.destinationPath('package.json'), require(packageJsonTemplatePath)(this.usingDefaults));
 
-        const generateEntryFile = (entryPath: string, name: string): void => {
+        const generateEntryFile = (entryPath, name) => {
             entryPath = entryPath.replace(/'/g, '');
             this.fs.copyTpl(path.resolve(__dirname, '../templates/index.js'), this.destinationPath(entryPath), { name });
         };
@@ -263,7 +260,7 @@ export default class InitGenerator extends CustomGenerator {
         if (typeof entry === 'string') {
             generateEntryFile(entry, 'your main file!');
         } else if (typeof entry === 'object') {
-            Object.keys(entry).forEach((name: string): void => generateEntryFile(entry[name], `${name} main file!`));
+            Object.keys(entry).forEach((name) => generateEntryFile(entry[name], `${name} main file!`));
         }
 
         // Generate README
